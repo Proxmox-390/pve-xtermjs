@@ -33,8 +33,12 @@ try {
     nodename = getQueryParameter('node', safeIdRegex);
     cmd = getQueryParameter('cmd', safeIdRegex);
     cmdOpts = getQueryParameter('cmd-opts');
-    // VM serial terminal interface; sclp, sclplm and 3270 are the SCLP and 3270 consoles on s390x
-    serial = getQueryParameter('serial', /^(serial[0-3]|sclp|sclplm|3270)$/);
+    // VM serial terminal interface; sclp, sclplm and 3270 are the SCLP and 3270 consoles on s390x,
+    // terminal0 to terminal15 its 3270 terminals
+    serial = getQueryParameter(
+	'serial',
+	/^(serial[0-3]|sclp|sclplm|3270|terminal(?:1[0-5]|[0-9]))$/,
+    );
 } catch (error) {
     updateState(states.disconnected, error);
     // re-throwing here stops execution of the remaining code
@@ -138,9 +142,10 @@ document.getElementById('status_bar').addEventListener('click', hideMsg);
 document.getElementById('connect_btn').addEventListener('click', startGuest);
 const fitAddon = new FitAddon.FitAddon();
 
-// c3270, the client of 3270 consoles, sizes its screen once at startup and exits if the terminal
-// is smaller than a 3270 model 2 screen (24x80), so never make the terminal smaller than that
-const minTerminalSize = serial === '3270' ? { cols: 80, rows: 24 } : undefined;
+// c3270, the client of 3270 consoles and terminals, sizes its screen once at startup and exits if
+// the terminal is smaller than a 3270 model 2 screen (24x80), so never make the terminal smaller
+const is3270 = serial === '3270' || /^terminal\d+$/.test(serial ?? '');
+const minTerminalSize = is3270 ? { cols: 80, rows: 24 } : undefined;
 if (minTerminalSize) {
     document.body.style.overflow = 'auto';
 }
