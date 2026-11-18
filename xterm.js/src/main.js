@@ -138,6 +138,29 @@ document.getElementById('status_bar').addEventListener('click', hideMsg);
 document.getElementById('connect_btn').addEventListener('click', startGuest);
 const fitAddon = new FitAddon.FitAddon();
 
+// c3270, the client of 3270 consoles, sizes its screen once at startup and exits if the terminal
+// is smaller than a 3270 model 2 screen (24x80), so never make the terminal smaller than that
+const minTerminalSize = serial === '3270' ? { cols: 80, rows: 24 } : undefined;
+if (minTerminalSize) {
+    document.body.style.overflow = 'auto';
+}
+
+function fitTerminal() {
+    if (!minTerminalSize) {
+	fitAddon.fit();
+	return;
+    }
+    let dims = fitAddon.proposeDimensions();
+    if (!dims || isNaN(dims.cols) || isNaN(dims.rows)) {
+	return;
+    }
+    let cols = Math.max(dims.cols, minTerminalSize.cols);
+    let rows = Math.max(dims.rows, minTerminalSize.rows);
+    if (cols !== term.cols || rows !== term.rows) {
+	term.resize(cols, rows);
+    }
+}
+
 createTerminal();
 
 function startConnection(params, term) {
@@ -259,7 +282,7 @@ function runTerminal() {
 		// delay initial focus and resize to after next frame
 		requestAnimationFrame(() => requestAnimationFrame(() => {
 		    term.focus();
-		    fitAddon.fit();
+		    fitTerminal();
 		}));
 	    } else {
 		socket.close();
@@ -281,13 +304,18 @@ function runTerminal() {
 	clearTimeout(resize);
 	resize = setTimeout(function() {
 	    // done resizing
-	    fitAddon.fit();
+	    fitTerminal();
 	}, 250);
     });
 
     // for remote sessions, this line needs to be sent by PDM
     if (!remote) {
         socket.send(`${PVE.UserName}:${ticket}\n`);
+	if (minTerminalSize) {
+	    // termproxy applies this right after starting the command, before c3270 sizes its screen
+	    fitTerminal();
+	    socket.send("1:" + term.cols + ":" + term.rows + ":");
+	}
     }
 }
 
