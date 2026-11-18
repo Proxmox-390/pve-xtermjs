@@ -23,7 +23,7 @@ var term,
 // can form a path segment
 const safeIdRegex = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/;
 
-var remote, remote_type, type, vmid, vmname, nodename, cmd, cmdOpts;
+var remote, remote_type, type, vmid, vmname, nodename, cmd, cmdOpts, serial;
 try {
     remote = getQueryParameter('remote', safeIdRegex);
     remote_type = getQueryParameter('remote-type', /^[A-Za-z]+$/);
@@ -33,6 +33,8 @@ try {
     nodename = getQueryParameter('node', safeIdRegex);
     cmd = getQueryParameter('cmd', safeIdRegex);
     cmdOpts = getQueryParameter('cmd-opts');
+    // VM serial terminal interface; sclp, sclplm and 3270 are the SCLP and 3270 consoles on s390x
+    serial = getQueryParameter('serial', /^(serial[0-3]|sclp|sclplm|3270)$/);
 } catch (error) {
     updateState(states.disconnected, error);
     // re-throwing here stops execution of the remaining code
@@ -221,6 +223,9 @@ function createTerminal() {
 	    }
 	    break;
     }
+    if (type === 'kvm' && serial) {
+	params.serial = serial;
+    }
     if (type === 'kvm' || type === 'lxc') {
 	API2Request({
 	    method: 'GET',
@@ -339,6 +344,9 @@ function checkMigration() {
 			    });
 			    if (vmname) {
 				params.set('vmname', vmname);
+			    }
+			    if (serial) {
+				params.set('serial', serial);
 			    }
 			    if (remote) {
 				params.set('remote', remote);
