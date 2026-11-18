@@ -142,10 +142,11 @@ document.getElementById('status_bar').addEventListener('click', hideMsg);
 document.getElementById('connect_btn').addEventListener('click', startGuest);
 const fitAddon = new FitAddon.FitAddon();
 
-// c3270, the client of 3270 consoles and terminals, sizes its screen once at startup and exits if
-// the terminal is smaller than a 3270 model 2 screen (24x80), so never make the terminal smaller
+// The 3270 consoles and terminals show a session of c3270 with the screen of a 3270 model, at least
+// model 2 (24x80) and the c3270 status line, so never make the terminal smaller: a smaller one
+// would only show a part of the screen
 const is3270 = serial === '3270' || /^terminal\d+$/.test(serial ?? '');
-const minTerminalSize = is3270 ? { cols: 80, rows: 24 } : undefined;
+const minTerminalSize = is3270 ? { cols: 80, rows: 25 } : undefined;
 if (minTerminalSize) {
     document.body.style.overflow = 'auto';
 }
@@ -317,7 +318,7 @@ function runTerminal() {
     if (!remote) {
         socket.send(`${PVE.UserName}:${ticket}\n`);
 	if (minTerminalSize) {
-	    // termproxy applies this right after starting the command, before c3270 sizes its screen
+	    // termproxy applies this right after starting the command, before it draws the screen
 	    fitTerminal();
 	    socket.send("1:" + term.cols + ":" + term.rows + ":");
 	}
