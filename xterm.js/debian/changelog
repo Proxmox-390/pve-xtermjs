@@ -1,3 +1,10 @@
+pve-xtermjs (6.0.0-3+s390x3) trixie; urgency=medium
+
+  * s390x port: keep the 3270 consoles and terminals at least 80x25, the
+    size of the persistent c3270 sessions (3270 model 2 plus status line).
+
+ -- Yvan Janssens <yvanj@cyber.gent>  Wed, 18 Nov 2026 23:40:00 +0100
+
 pve-xtermjs (6.0.0-3+s390x2) trixie; urgency=medium
 
   * s390x port: allow opening the 3270 terminals (terminal0 to terminal15) of
