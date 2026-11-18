@@ -1,3 +1,10 @@
+pve-xtermjs (6.0.0-3+s390x2) trixie; urgency=medium
+
+  * s390x port: allow opening the 3270 terminals (terminal0 to terminal15) of
+    s390x VMs, kept at least 24x80 like the 3270 console.
+
+ -- Yvan Janssens <yvanj@cyber.gent>  Wed, 18 Nov 2026 21:23:34 +0100
+
 pve-xtermjs (6.0.0-3+s390x1) trixie; urgency=medium
 
   * s390x port: allow opening a specific serial terminal of a VM, including
