@@ -1,3 +1,11 @@
+pve-xtermjs (6.0.0-3+s390x1) trixie; urgency=medium
+
+  * s390x port: allow opening a specific serial terminal of a VM, including
+    the SCLP and 3270 consoles of s390x VMs, and keep 3270 consoles at least
+    24x80 for c3270.
+
+ -- Yvan Janssens <yvanj@cyber.gent>  Wed, 18 Nov 2026 15:36:38 +0100
+
 pve-xtermjs (6.0.0-3) trixie; urgency=medium
 
   * stop the terminal when an upgrade console closes, like for shell and
