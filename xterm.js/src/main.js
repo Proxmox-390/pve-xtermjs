@@ -23,7 +23,7 @@ var term,
 // can form a path segment
 const safeIdRegex = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/;
 
-var remote, remote_type, type, vmid, vmname, nodename, cmd, cmdOpts, serial, unloadPrompt;
+var remote, remote_type, type, vmid, vmname, nodename, cmd, cmdOpts, serial, unloadPrompt, model3270;
 try {
     remote = getQueryParameter('remote', safeIdRegex);
     remote_type = getQueryParameter('remote-type', /^[A-Za-z]+$/);
@@ -42,6 +42,8 @@ try {
     // '0' if leaving the page loses nothing, so it must not ask for confirmation, for example the
     // consoles of s390x VMs, whose sessions persist on the host
     unloadPrompt = getQueryParameter('unload-prompt', /^[01]$/) !== '0';
+    // the model of a 3270 console or terminal, default 2
+    model3270 = getQueryParameter('model', /^[2-5]$/) ?? '2';
 } catch (error) {
     updateState(states.disconnected, error);
     // re-throwing here stops execution of the remaining code
@@ -145,11 +147,19 @@ document.getElementById('status_bar').addEventListener('click', hideMsg);
 document.getElementById('connect_btn').addEventListener('click', startGuest);
 const fitAddon = new FitAddon.FitAddon();
 
-// The 3270 consoles and terminals show a session of c3270 with the screen of a 3270 model, at least
-// model 2 (24x80) and the c3270 status line, so never make the terminal smaller: a smaller one
-// would only show a part of the screen
+// The 3270 consoles and terminals show a session of c3270 with the screen of their 3270 model and
+// the c3270 status line, so never make the terminal smaller: a smaller one would only show a part
+// of the screen
+const screenSizes3270 = { // model: [rows, columns]
+    2: [24, 80],
+    3: [32, 80],
+    4: [43, 80],
+    5: [27, 132],
+};
 const is3270 = serial === '3270' || /^terminal\d+$/.test(serial ?? '');
-const minTerminalSize = is3270 ? { cols: 80, rows: 25 } : undefined;
+const minTerminalSize = is3270
+    ? { cols: screenSizes3270[model3270][1], rows: screenSizes3270[model3270][0] + 1 }
+    : undefined;
 if (minTerminalSize) {
     document.body.style.overflow = 'auto';
 }
@@ -387,6 +397,9 @@ function checkMigration() {
 			    }
 			    if (!unloadPrompt) {
 				params.set('unload-prompt', 0);
+			    }
+			    if (is3270) {
+				params.set('model', model3270);
 			    }
 			    if (remote) {
 				params.set('remote', remote);
