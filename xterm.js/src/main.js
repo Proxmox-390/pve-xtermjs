@@ -23,7 +23,7 @@ var term,
 // can form a path segment
 const safeIdRegex = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/;
 
-var remote, remote_type, type, vmid, vmname, nodename, cmd, cmdOpts, serial;
+var remote, remote_type, type, vmid, vmname, nodename, cmd, cmdOpts, serial, unloadPrompt;
 try {
     remote = getQueryParameter('remote', safeIdRegex);
     remote_type = getQueryParameter('remote-type', /^[A-Za-z]+$/);
@@ -39,6 +39,9 @@ try {
 	'serial',
 	/^(serial[0-3]|sclp|sclplm|3270|terminal(?:1[0-5]|[0-9]))$/,
     );
+    // '0' if leaving the page loses nothing, so it must not ask for confirmation, for example the
+    // consoles of s390x VMs, whose sessions persist on the host
+    unloadPrompt = getQueryParameter('unload-prompt', /^[01]$/) !== '0';
 } catch (error) {
     updateState(states.disconnected, error);
     // re-throwing here stops execution of the remaining code
@@ -77,7 +80,7 @@ function updateState(newState, msg, code) {
 	    severity = severities.warning;
 	    break;
 	case states.connected:
-	    window.onbeforeunload = windowUnload;
+	    window.onbeforeunload = unloadPrompt ? windowUnload : undefined;
 	    message = "Connected";
 	    break;
 	case states.disconnecting:
@@ -381,6 +384,9 @@ function checkMigration() {
 			    }
 			    if (serial) {
 				params.set('serial', serial);
+			    }
+			    if (!unloadPrompt) {
+				params.set('unload-prompt', 0);
 			    }
 			    if (remote) {
 				params.set('remote', remote);
