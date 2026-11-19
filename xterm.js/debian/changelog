@@ -1,3 +1,13 @@
+pve-xtermjs (6.0.0-3+s390x4) trixie; urgency=medium
+
+  * s390x port: no prompt before leaving the page when opened with
+    unload-prompt=0, for consoles whose sessions persist (s390x VMs).
+
+  * s390x port: keep 3270 terminals of the models 3, 4 and 5 at least at
+    their screen size (query parameter model).
+
+ -- Yvan Janssens <yvanj@cyber.gent>  Thu, 19 Nov 2026 09:30:37 +0100
+
 pve-xtermjs (6.0.0-3+s390x3) trixie; urgency=medium
 
   * s390x port: keep the 3270 consoles and terminals at least 80x25, the
