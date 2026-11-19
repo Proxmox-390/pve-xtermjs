@@ -147,9 +147,10 @@ document.getElementById('status_bar').addEventListener('click', hideMsg);
 document.getElementById('connect_btn').addEventListener('click', startGuest);
 const fitAddon = new FitAddon.FitAddon();
 
-// The 3270 consoles and terminals show a session of c3270 with the screen of their 3270 model and
-// the c3270 status line, so never make the terminal smaller: a smaller one would only show a part
-// of the screen
+// The 3270 consoles and terminals show a session of c3270 with a fixed size: the screen of their
+// 3270 model, the menu bar of c3270 in the two rows above and its status line below. The terminal
+// has exactly that size at the normal font size, centred in a larger page and with scroll bars in
+// a smaller one: neither clipped nor scaled
 const screenSizes3270 = { // model: [rows, columns]
     2: [24, 80],
     3: [32, 80],
@@ -157,27 +158,39 @@ const screenSizes3270 = { // model: [rows, columns]
     5: [27, 132],
 };
 const is3270 = serial === '3270' || /^terminal\d+$/.test(serial ?? '');
-const minTerminalSize = is3270
-    ? { cols: screenSizes3270[model3270][1], rows: screenSizes3270[model3270][0] + 1 }
+const fixedTerminalSize = is3270
+    ? { cols: screenSizes3270[model3270][1], rows: screenSizes3270[model3270][0] + 3 }
     : undefined;
-if (minTerminalSize) {
-    document.body.style.overflow = 'auto';
+if (fixedTerminalSize) {
+    document.body.classList.add('fixed-size');
 }
 
 function fitTerminal() {
-    if (!minTerminalSize) {
+    if (!fixedTerminalSize) {
 	fitAddon.fit();
 	return;
     }
-    let dims = fitAddon.proposeDimensions();
-    if (!dims || isNaN(dims.cols) || isNaN(dims.rows)) {
+    if (term.cols !== fixedTerminalSize.cols || term.rows !== fixedTerminalSize.rows) {
+	term.resize(fixedTerminalSize.cols, fixedTerminalSize.rows);
+    }
+}
+
+// Size a console window of its own (opened by the console button) to a terminal of fixed size, as
+// far as the screen allows; the window opener can only estimate the size of the font
+function fitWindowToTerminal() {
+    if (!fixedTerminalSize || !window.opener || window.top !== window) {
 	return;
     }
-    let cols = Math.max(dims.cols, minTerminalSize.cols);
-    let rows = Math.max(dims.rows, minTerminalSize.rows);
-    if (cols !== term.cols || rows !== term.rows) {
-	term.resize(cols, rows);
-    }
+    let wrap = document.getElementById('wrap');
+    let style = getComputedStyle(wrap);
+    let rect = term.element.getBoundingClientRect();
+    let width = Math.ceil(rect.width + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight));
+    let height = Math.ceil(rect.height + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom));
+    let outerWidth = Math.min(window.outerWidth + width - window.innerWidth, screen.availWidth);
+    let outerHeight = Math.min(window.outerHeight + height - window.innerHeight, screen.availHeight);
+    try {
+	window.resizeTo(outerWidth, outerHeight);
+    } catch (_e) { } // the browser may not allow it, the page has scroll bars then
 }
 
 createTerminal();
@@ -229,9 +242,10 @@ function startGuest() {
 }
 
 function createTerminal() {
-    term = new Terminal(getTerminalSettings());
+    term = new Terminal({ ...getTerminalSettings(), ...fixedTerminalSize });
     term.open(terminalContainer);
     term.loadAddon(fitAddon);
+    requestAnimationFrame(fitWindowToTerminal);
     let loadedWebgl = false;
     try {
 	if (detectWebgl()) {
@@ -330,7 +344,7 @@ function runTerminal() {
     // for remote sessions, this line needs to be sent by PDM
     if (!remote) {
         socket.send(`${PVE.UserName}:${ticket}\n`);
-	if (minTerminalSize) {
+	if (fixedTerminalSize) {
 	    // termproxy applies this right after starting the command, before it draws the screen
 	    fitTerminal();
 	    socket.send("1:" + term.cols + ":" + term.rows + ":");
