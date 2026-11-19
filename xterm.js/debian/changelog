@@ -1,3 +1,12 @@
+pve-xtermjs (6.0.0-3+s390x5) trixie; urgency=medium
+
+  * xterm.js: show the 3270 consoles and terminals of s390x VMs at their
+    fixed size (3270 screen, c3270 menu bar and status line) at the normal
+    font size: centred in a larger pane, with scroll bars in a smaller one;
+    console windows fit themselves to the terminal (#73, decisions 14, 29).
+
+ -- Yvan Janssens <yvanj@cyber.gent>  Thu, 19 Nov 2026 10:15:18 +0100
+
 pve-xtermjs (6.0.0-3+s390x4) trixie; urgency=medium
 
   * s390x port: no prompt before leaving the page when opened with
